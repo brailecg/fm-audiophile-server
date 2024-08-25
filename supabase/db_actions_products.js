@@ -151,7 +151,7 @@ const updateProductSku = async ({ id, item }) => {
   if (error) {
     return 500;
   }
-  console.log({ status });
+
   return status;
 };
 
