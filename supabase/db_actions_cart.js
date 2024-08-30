@@ -37,7 +37,7 @@ const getAllCartsByProfileId = async ({ profileId }) => {
   let { data, error } = await supabase
     .from("cart")
     .select(
-      "cart_id, profile_id, cart_items!inner(cart_id, product_id, cart_item_qty, cart_item_price)"
+      "cart_id, profile_id, cart_items!inner(cart_item_id, cart_id, product_id, cart_item_qty, cart_item_price, products!inner(product_images, name))"
     )
     .eq("profile_id", profileId);
   if (error) {
@@ -49,30 +49,36 @@ const getAllCartsByProfileId = async ({ profileId }) => {
 
 // insert or update cart and cart_items
 const cartActions = async ({ profileId, cartId, items }) => {
-  const supabase = serverClient();
-
   // check if cart for this profile exists, then just update
   // check if the item has a cart_id, then update
 
   let itemsToInsert = [];
   let itemsToUpsert = [];
 
+  let cartUpserted = [];
+  let cartCreated = [];
   if (cartId !== null) {
     // there's an existing cart
     items.forEach((item) => {
-      if (item?.cart_item_id === null) {
-        // insert
-        itemsToInsert = [...itemsToInsert, item];
-      } else {
+      if (item?.cart_item_id) {
         //upsert
         itemsToUpsert = [...itemsToUpsert, item];
+      } else {
+        // insert
+        itemsToInsert = [...itemsToInsert, item];
       }
     });
+
+    cartUpserted = await updateCartItems({
+      profileId,
+      itemsToInsert,
+      itemsToUpsert,
+    });
   } else {
-    const cartCreated = await createCart({ profileId, items });
+    cartCreated = await createCart({ profileId, items });
   }
 
-  return { itemsToUpsert, itemsToInsert };
+  return { cartUpserted, cartCreated };
 };
 
 const createCart = async ({ profileId, items }) => {
@@ -131,6 +137,42 @@ const removeItemFromCart = async ({ itemId }) => {
   return "success";
 };
 
+const updateCartItems = async ({ profileId, itemsToInsert, itemsToUpsert }) => {
+  const supabase = serverClient();
+
+  if (itemsToInsert.length > 0) {
+    const itemsAdjusted = itemsToInsert.map((item) => {
+      return {
+        cart_id: item.cart_id,
+        product_id: item.product_id,
+        cart_item_qty: item.cart_item_qty,
+        cart_item_price: item.cart_item_price,
+      };
+    });
+
+    const { data: updatedInsert, error } = await supabase
+      .from("cart_items")
+      .insert(itemsAdjusted)
+      .select();
+  }
+  if (itemsToUpsert.length > 0) {
+    const itemsToUpsertAdjusted = itemsToUpsert.map((item) => {
+      return {
+        cart_item_id: item.cart_item_id,
+        cart_id: item.cart_id,
+        product_id: item.product_id,
+        cart_item_qty: item.cart_item_qty,
+        cart_item_price: item.cart_item_price,
+      };
+    });
+
+    const { data: updatedUpsert, error } = await supabase
+      .from("cart_items")
+      .upsert(itemsToUpsertAdjusted)
+      .select();
+  }
+  return { response: "updated" };
+};
 module.exports = {
   getAllCart,
   getAllCartsByCartId,
