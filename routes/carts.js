@@ -43,7 +43,6 @@ router.post("/:id", async function (req, res) {
 
 // delete item by itemId
 router.delete("/item/:id", async function (req, res) {
-  console.log({ req: req.params });
   const deleteItemFromCart = await removeItemFromCart({
     itemId: req?.params.id,
   });

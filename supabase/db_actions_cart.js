@@ -97,8 +97,7 @@ const createCart = async ({ profileId, items }) => {
   if (error) {
     return error;
   }
-  console.log({ cart });
-  console.log({ items });
+
   if (items !== null && items.length > 0) {
     const cartId = cart[0]?.cart_id;
     let itemstToInsert = [];
@@ -114,7 +113,6 @@ const createCart = async ({ profileId, items }) => {
       ];
     });
     if (itemstToInsert.length > 0) {
-      console.log({ itemstToInsert });
       const { data: cartItems, error: cartItemsError } = await supabase
         .from("cart_items")
         .upsert(itemstToInsert, { onConflict: "product_id, cart_id" });
@@ -131,7 +129,6 @@ const removeItemFromCart = async ({ itemId }) => {
     .eq("cart_item_id", itemId);
 
   if (error) {
-    console.log({ error });
     return error.message;
   }
   return "success";
