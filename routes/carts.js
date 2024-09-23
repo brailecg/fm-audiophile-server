@@ -7,6 +7,7 @@ const {
   getAllCartsByCartId,
   cartActions,
   removeItemFromCart,
+  removeCart,
 } = require("../supabase/db_actions_cart");
 
 // get all carts
@@ -47,6 +48,14 @@ router.delete("/item/:id", async function (req, res) {
     itemId: req?.params.id,
   });
   res.json(deleteItemFromCart);
+});
+
+// delete cart by cartid
+router.delete("/:cartId", async function (req, res) {
+  const deleteCart = await removeCart({
+    cartId: req?.params.cartId,
+  });
+  res.json(deleteCart);
 });
 
 module.exports = router;

@@ -170,10 +170,21 @@ const updateCartItems = async ({ profileId, itemsToInsert, itemsToUpsert }) => {
   }
   return { response: "updated" };
 };
+
+const removeCart = async ({ cartId }) => {
+  const supabase = serverClient();
+  let { error } = await supabase.from("cart").delete().eq("cart_id", cartId);
+
+  if (error) {
+    return error.message;
+  }
+  return "success";
+};
 module.exports = {
   getAllCart,
   getAllCartsByCartId,
   getAllCartsByProfileId,
   cartActions,
   removeItemFromCart,
+  removeCart,
 };
